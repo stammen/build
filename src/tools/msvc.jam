@@ -132,6 +132,9 @@ rule init (
     #   <setup-arm>
     #   <setup-phone-i386>
     #   <setup-phone-arm>
+    #   <setup-store-i386>
+    #   <setup-store-amd64>
+    #   <setup-store-arm>
     #       Platform specific setup command to invoke before running any of the
     #     msvc tools used when builing a target for a specific platform, e.g.
     #     when building a 32 or 64 bit executable.
@@ -150,6 +153,7 @@ rule init (
     {
         options += <command>$(command) ;
     }
+
     configure $(version) : $(options) ;
 }
 
@@ -286,6 +290,7 @@ rule configure-version-specific ( toolset : version : conditions )
 }
 
 # Feature for handling targeting different Windows API sets.
+
 feature.feature windows-api : desktop store phone : propagated composite link-incompatible ;
 feature.compose <windows-api>store : <define>WINAPI_FAMILY=WINAPI_FAMILY_APP <define>_WIN32_WINNT=0x0A00  
     <linkflags>/APPCONTAINER ;
@@ -971,6 +976,9 @@ local rule configure-really ( version ? : options * )
         local setup-arm ;
         local setup-phone-i386 ;
         local setup-phone-arm ;
+        local setup-store-i386 ;
+        local setup-store-amd64 ;
+        local setup-store-arm ;
 
         if $(command)
         {
@@ -1072,6 +1080,12 @@ local rule configure-really ( version ? : options * )
                 setup-$(c) = [ generate-setup-cmd $(version) : $(command) : $(parent) : $(options) : $(c) : $(global-setup) : $(default-global-setup-options-$(c)) : $(default-setup-$(c)) ] ;
             }
             
+            # Windows store apps require the store option added to vcvars command
+            for local c in $(cpu)
+            {
+                setup-store-$(c) = [ generate-setup-cmd $(version) : $(command) : $(parent) : $(options) : $(c) : $(global-setup) : "$(default-global-setup-options-$(c)) store" : $(default-setup-$(c)) ] ;
+            }
+
             # Windows phone has different setup scripts, located in a different directory hierarchy.
             # The 11.0 toolset can target Windows Phone 8.0 and the 12.0 toolset can target Windows Phone 8.1,
             # each of which have a different directory for their vcvars setup scripts.
@@ -1157,10 +1171,17 @@ local rule configure-really ( version ? : options * )
             for api in desktop store phone
             {
                 local setup-script = $(setup-$(c)) ;
+
                 if $(api) = phone
                 {
                     setup-script = $(setup-phone-$(c)) ;
                 }
+
+                if $(api) = store
+                {
+                    setup-script = $(setup-store-$(c)) ;
+                }
+
                 if $(api) = desktop
                 {
                     toolset.flags msvc.compile .CC  <windows-api>$(api)/$(cpu-conditions) : $(setup-script)$(compiler) /Zm800 -nologo ;
