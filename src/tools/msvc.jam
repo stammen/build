@@ -293,7 +293,7 @@ rule configure-version-specific ( toolset : version : conditions )
 
 feature.feature windows-api : desktop store phone : propagated composite link-incompatible ;
 feature.compose <windows-api>store : <define>WINAPI_FAMILY=WINAPI_FAMILY_APP <define>_WIN32_WINNT=0x0A00  
-    <linkflags>/APPCONTAINER ;
+    <linkflags>/APPCONTAINER <linkflags>WindowsApp.lib ;
 feature.compose <windows-api>phone : <define>WINAPI_FAMILY=WINAPI_FAMILY_PHONE_APP <define>git sa=0x0602 
     <linkflags>/APPCONTAINER <linkflags>/NODEFAULTLIB:ole32.lib <linkflags>/NODEFAULTLIB:kernel32.lib <linkflags>WindowsPhoneCore.lib ;
 feature.set-default windows-api : desktop ;
@@ -1188,7 +1188,7 @@ local rule configure-really ( version ? : options * )
                 }
                 else
                 {
-                    toolset.flags msvc.compile .CC  <windows-api>$(api)/$(cpu-conditions) : $(setup-script)$(compiler) /Zm800 /ZW /EHsc -nologo ;
+                    toolset.flags msvc.compile .CC  <windows-api>$(api)/$(cpu-conditions) : $(setup-script)$(compiler) /Zm800 /ZW /EHsc -nologo /D_UNICODE /DUNICODE ;
                 }
                 toolset.flags msvc.compile .ASM <windows-api>$(api)/$(cpu-conditions) : $(setup-script)$(cpu-assembler) -nologo ;
                 toolset.flags msvc.link    .LD  <windows-api>$(api)/$(cpu-conditions) : $(setup-script)$(linker) /NOLOGO /INCREMENTAL:NO ;
